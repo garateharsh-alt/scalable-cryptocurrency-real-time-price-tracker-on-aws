@@ -1,0 +1,15 @@
+# Python temporary files
+__pycache__/
+*.pyc
+
+# Local database (Don't push this, AWS will use DynamoDB)
+instance/
+crypto_tracker.db
+
+# Virtual Environment
+venv/
+.env
+
+# MacOS/Windows system files
+.DS_Store
+Thumbs.db
