@@ -85,4 +85,54 @@ def login():
         table = dynamodb.Table(DYNAMODB_TABLE_USERS)
         response = table.get_item(Key={'username': request.form['username']})
         user_data = response.get('Item')
-        if user_data and check_password
+        if user_data and check_password_hash(user_data['password'], request.form['password']):
+            login_user(User(user_data['username'], user_data['password']))
+            return redirect(url_for('get_crypto_data'))
+        flash('Invalid username or password')
+    return render_template('login.html')
+
+@application.route('/prices')
+@login_required
+def get_crypto_data():
+    api_url = "https://api.coingecko.com/api/v3/coins/markets"
+    params = {"vs_currency": "usd", "order": "market_cap_desc", "per_page": 10, "sparkline": 'true'}
+    try:
+        response = requests.get(api_url, params=params)
+        data = response.json()
+        table = dynamodb.Table(DYNAMODB_TABLE_MARKET_PRICES)
+        
+        for coin in data:
+            table.put_item(Item={
+                'symbol': coin['symbol'],
+                'name': coin['name'],
+                'current_price': decimal.Decimal(str(coin['current_price'])),
+                'sparkline_7d': str(coin['sparkline_in_7d']['price']),
+                'market_cap_rank': coin['market_cap_rank']
+            })
+
+        db_items = table.scan()['Items']
+        db_items.sort(key=lambda x: int(x['market_cap_rank']))
+        charts = {c['symbol']: create_chart(c['sparkline_7d']) for c in db_items}
+        return render_template('trading.html', cryptos=db_items, charts=charts)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@application.route('/add_to_watchlist', methods=['POST'])
+@login_required
+def add_to_watchlist():
+    data = request.get_json()
+    table = dynamodb.Table(DYNAMODB_TABLE_WATCHLIST)
+    table.put_item(Item={
+        'user_id': current_user.username,
+        'crypto_symbol': data.get('symbol')
+    })
+    return jsonify({'message': 'Added to Watchlist!'}), 200
+
+@application.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    application.run(host='0.0.0.0', port=5000)
