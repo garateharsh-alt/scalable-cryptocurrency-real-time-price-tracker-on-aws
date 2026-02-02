@@ -1,20 +1,40 @@
 <!DOCTYPE html>
 <html>
-<head><title>My Watchlist</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+<head>
+    <title>Prices</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        async function addToWatchlist(symbol) {
+            const response = await fetch('/add_to_watchlist', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ symbol: symbol })
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+    </script>
+</head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-primary px-4"><a class="navbar-brand fw-bold" href="/">CryptoTracker</a><a href="/prices" class="btn btn-light btn-sm">Back</a></nav>
-    <div class="container mt-5">
-        <h2>My Watchlist</h2>
-        <div class="card shadow-sm mt-3"><div class="card-body">
-            <table class="table">
-                <thead><tr><th>Symbol</th><th>Price</th><th>Trend</th></tr></thead>
-                <tbody>
-                    {% for coin in cryptos %}
-                    <tr><td class="text-uppercase">{{ coin.symbol }}</td><td>${{ "{:,.2f}".format(coin.current_price) }}</td><td>{{ charts[coin.symbol] | safe }}</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div></div>
+    <nav class="navbar navbar-dark bg-primary px-4">
+        <a class="navbar-brand fw-bold" href="/">CryptoTracker</a>
+        <div class="navbar-nav flex-row ms-auto"><a class="nav-link px-3" href="/logout">Logout</a></div>
+    </nav>
+    <div class="container mt-4">
+        <h2 class="mb-4">Live Cryptocurrency Market</h2>
+        <table class="table table-hover bg-white shadow-sm rounded">
+            <thead class="table-dark"><tr><th>Symbol</th><th>Price (USD)</th><th>Trend Chart</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for coin in cryptos %}
+                <tr>
+                    <td class="text-uppercase fw-bold">{{ coin.symbol }}</td>
+                    <td>${{ "{:,.2f}".format(coin.current_price) }}</td>
+                    <td>{{ charts[coin.symbol] | safe }}</td>
+                    <td><button onclick="addToWatchlist('{{ coin.symbol }}')" class="btn btn-sm btn-outline-primary">Add +</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
